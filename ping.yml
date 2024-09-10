@@ -5,3 +5,4 @@
   tasks:
     - name: Update packages with apt
       ansible.builtin.ping:
+        data: crash
