@@ -1,0 +1,7 @@
+---
+- name: Update and upgrade apt packages
+  hosts: labb
+
+  tasks:
+    - name: Update packages with apt
+      ansible.builtin.ping:
