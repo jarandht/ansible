@@ -1,0 +1,9 @@
+---
+- name: Shutdown Ubuntu machine
+  hosts: labb
+  become: yes
+  tasks:
+    - name: Shutdown the machine
+      ansible.builtin.command:
+        cmd: shutdown now
+      ignore_errors: yes

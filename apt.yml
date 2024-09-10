@@ -1,12 +1,13 @@
 ---
 - name: Update and upgrade apt packages
   hosts: labb
+  become: yes
 
   tasks:
-    - name: Update packages with apt
+    - name: Update apt package list
       ansible.builtin.apt:
-        update_cache: true
+        update_cache: yes
 
-    - name: Upgrade packages with apt
+    - name: Upgrade all apt packages
       ansible.builtin.apt:
         upgrade: dist
