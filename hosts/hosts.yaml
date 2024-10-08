@@ -1,0 +1,5 @@
+all:
+  children:
+    ubs:
+      hosts:
+        10.10.0.10:
