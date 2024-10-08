@@ -1,6 +1,5 @@
----
-- name: Shutdown Ubuntu machine
-  hosts: labb
+- hosts: "{{ hosts }}"
+
   become: yes
   tasks:
     - name: Shutdown the machine

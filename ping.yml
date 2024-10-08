@@ -1,7 +1,6 @@
----
-- name: Update and upgrade apt packages
-  hosts: labb
+- hosts: "{{ hosts }}"
 
+  become: yes
   tasks:
     - name: Update packages with apt
       ansible.builtin.ping:
