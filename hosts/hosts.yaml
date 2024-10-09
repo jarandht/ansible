@@ -1,5 +1,12 @@
 all:
   children:
     ubs:
-      hosts:
-        10.10.0.103:
+      infra
+        children:
+          dns
+            hosts:
+              10.10.0.10:
+              10.10.0.11:
+          autoamtion:
+            hosts:
+              10.10.0.103:
