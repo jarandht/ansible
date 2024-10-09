@@ -1,6 +1,10 @@
 - hosts: "{{ hosts }}"
   become: yes
   tasks:
+    - name: Delay for other tasks to complete
+      pause:
+        seconds: 5
+
     - name: Shutdown the machine
       ansible.builtin.command:
         cmd: /sbin/shutdown now
