@@ -2,6 +2,6 @@
 
   become: yes
   tasks:
-    - name: Update packages with apt
+    - name: ping
       ansible.builtin.ping:
         data: crash

@@ -1,8 +1,7 @@
 - hosts: "{{ hosts }}"
-
   become: yes
   tasks:
     - name: Shutdown the machine
       ansible.builtin.command:
-        cmd: shutdown now
+        cmd: /sbin/shutdown now
       ignore_errors: yes
