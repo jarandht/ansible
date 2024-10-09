@@ -1,0 +1,13 @@
+---
+- hosts: "TEMP"
+
+  become: yes
+  tasks:
+
+  - name: Set timezone to Europe/Oslo
+    hosts: ubs-dkh
+    become: yes
+    tasks:
+      - name: Set the timezone
+        ansible.builtin.command:
+          cmd: timedatectl set-timezone Europe/Oslo

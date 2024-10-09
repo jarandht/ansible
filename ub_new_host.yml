@@ -1,0 +1,34 @@
+- hosts: "TEMP"
+
+  become: yes
+  tasks:
+
+    - name: upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+
+    - name: install core packages
+      apt:
+        name:
+          - qemu-guest-agent
+        update_cache: yes
+
+    - name: start guest qemu-guest-agent
+      service:
+        name: qemu-guest-agent
+        state: started
+        enabled: yes
+
+    - name: Set the timezone
+      ansible.builtin.command:
+        cmd: timedatectl set-timezone Europe/Oslo
+
+    - name: Reboot the server
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
