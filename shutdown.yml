@@ -3,5 +3,5 @@
   tasks:
     - name: Shutdown the machine
       ansible.builtin.command:
-        cmd: /usr/sbin/shutdown now  # Update with the correct path
+        cmd: /bin/systemctl poweroff
       ignore_errors: yes
