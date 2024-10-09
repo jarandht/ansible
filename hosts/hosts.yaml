@@ -2,9 +2,9 @@ all:
   children:
     ubs:
       children:
-        infra
+        infra:
           children:
-            dns
+            dns:
               hosts:
                 10.10.0.10:
                 10.10.0.11:
