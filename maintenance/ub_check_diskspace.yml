@@ -3,8 +3,9 @@
   tasks:
 
     - name: Get disk usage
-      command: df -h
+      command: df -h /
       register: disk_usage
+      changed_when: false  # Prevents marking the task as changed
 
     - name: Check disk space available
       shell: df -h / | awk 'NR==2 {print $5}'
