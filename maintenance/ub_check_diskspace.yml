@@ -22,4 +22,4 @@
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: disk_usage.stdout_lines[1].split()[4][:-1] | int > 80
+      when: disk_usage.stdout_lines[1].split()[4][:-1] | int > 1
