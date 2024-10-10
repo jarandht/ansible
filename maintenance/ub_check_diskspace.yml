@@ -23,14 +23,22 @@
 #      when: disk_usage.stdout[:-1]|int > 80
 
     # Teams
-    - name: Send Teams message
+    - name: Send Teams message with disk usage table
       uri:
         url: "{{ teams_webhook_url }}"
         method: POST
         body_format: json
         body:
-          text: "Disk space on {{ inventory_hostname }} is above 80%!"
+          text: |
+            **Disk Space Alert**: The following hosts have disk usage above 80%!
+
+            | Hostname        | Disk Usage (%) |
+            |------------------|-----------------|
+            {% for host in groups['all'] %}
+            | {{ host }}      | {{ hostvars[host].disk_usage.stdout[:-1] | int }}              |
+            {% endfor %}
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: disk_usage.stdout[:-1] | int > 1
+      when: >
+        disk_usage.stdout[:-1] | int > 1
