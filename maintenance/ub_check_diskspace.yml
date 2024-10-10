@@ -1,37 +1,20 @@
 - hosts: "{{ hosts }}"
-
+  gather_facts: no  # Disable gathering facts if not needed
   tasks:
-
     - name: Get disk usage
       command: df -h /
       register: disk_usage
       changed_when: false  # Prevents marking the task as changed
 
-    - name: Check disk space available
-      shell: df -h / | awk 'NR==2 {print $5}'
-      register: disk_usage
-
-    # Send Discord message when disk space is over 80%
-#    - name: Send Discord message
-#      uri:
-#       url: "{{ discord_webhook_url }}"
-#        method: POST
-#        body_format: json
-#        body: '{"content": "Disk space on {{ inventory_hostname }} is above 80%!"}'
-#        headers:
-#          Content-Type: application/json
-#        status_code: 204
-#      when: disk_usage.stdout[:-1]|int > 80
-
-    # Teams
     - name: Set disk usage fact
       set_fact:
         usage_percent: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
+      when: disk_usage.stdout_lines | length > 1  # Ensure there's a second line
 
     - name: Add host to alert list if usage is above 80%
       set_fact:
         alert_hosts: "{{ alert_hosts | default([]) + [inventory_hostname] }}"
-      when: usage_percent > 80
+      when: usage_percent is defined and usage_percent > 80  # Check if usage_percent is defined
 
     - name: Send Teams message with disk usage table
       uri:
