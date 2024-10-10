@@ -1,4 +1,4 @@
-- hosts: "TEMP"
+- hosts: "{{ hosts }}"
 
   become: yes
   tasks:

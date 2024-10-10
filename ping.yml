@@ -1,7 +1,0 @@
-- hosts: "{{ hosts }}"
-
-  become: yes
-  tasks:
-    - name: ping
-      ansible.builtin.ping:
-        data: crash

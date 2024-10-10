@@ -1,4 +1,4 @@
-- hosts: "TEMP"
+- hosts: "{{ hosts }}"
 
   become: yes
   tasks:
@@ -41,11 +41,3 @@
     # add the current user to the docker group
     - name: add user permissions
       shell: "usermod -aG docker {{ ansible_user }}"
-
-    - name: Reboot the server
-      ansible.builtin.reboot:
-        msg: "Reboot initiated by Ansible"
-        connect_timeout: 5
-        reboot_timeout: 600
-        pre_reboot_delay: 0
-        post_reboot_delay: 30
