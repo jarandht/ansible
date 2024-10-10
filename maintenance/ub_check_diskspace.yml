@@ -23,6 +23,15 @@
 #      when: disk_usage.stdout[:-1]|int > 80
 
     # Teams
+    - name: Set disk usage fact
+      set_fact:
+        usage_percent: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
+
+    - name: Add host to alert list if usage is above 80%
+      set_fact:
+        alert_hosts: "{{ alert_hosts | default([]) + [inventory_hostname] }}"
+      when: usage_percent > 80
+
     - name: Send Teams message with disk usage table
       uri:
         url: "{{ teams_webhook_url }}"
@@ -34,11 +43,10 @@
 
             | Hostname        | Disk Usage (%) |
             |------------------|-----------------|
-            {% for host in groups['all'] %}
-            | {{ host }}      | {{ hostvars[host].disk_usage.stdout[:-1] | int }}              |
+            {% for host in alert_hosts %}
+            | {{ host }}      | {{ hostvars[host].usage_percent }}              |
             {% endfor %}
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: >
-        disk_usage.stdout[:-1] | int > 1
+      when: alert_hosts is defined and alert_hosts | length > 0
