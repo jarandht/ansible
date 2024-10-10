@@ -7,15 +7,10 @@
       register: disk_usage
       changed_when: false  # Prevents marking the task as changed
 
-    - name: Check disk space available
-      shell: df -h / | awk 'NR==2 {print $5}'
-      register: disk_space_available
-
-    # Teams
-    - name: Set disk usage fact
+    - name: Extract disk usage percentage
       set_fact:
-        usage_percent: "{{ disk_space_available.stdout[:-1] | int }}"
-      when: disk_space_available.stdout is defined and disk_space_available.stdout | length > 0
+        usage_percent: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
+      when: disk_usage.stdout_lines | length > 1
 
     - name: Add host to alert list if usage is above 80%
       set_fact:
