@@ -1,20 +1,26 @@
 - hosts: "{{ hosts }}"
-  gather_facts: no  # Disable gathering facts if not needed
+  gather_facts: no  # Skip gathering facts for efficiency
+
   tasks:
     - name: Get disk usage
       command: df -h /
       register: disk_usage
       changed_when: false  # Prevents marking the task as changed
 
+    - name: Check disk space available
+      shell: df -h / | awk 'NR==2 {print $5}'
+      register: disk_space_available
+
+    # Teams
     - name: Set disk usage fact
       set_fact:
-        usage_percent: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
-      when: disk_usage.stdout_lines | length > 1  # Ensure there's a second line
+        usage_percent: "{{ disk_space_available.stdout[:-1] | int }}"
+      when: disk_space_available.stdout is defined and disk_space_available.stdout | length > 0
 
     - name: Add host to alert list if usage is above 80%
       set_fact:
         alert_hosts: "{{ alert_hosts | default([]) + [inventory_hostname] }}"
-      when: usage_percent is defined and usage_percent > 80  # Check if usage_percent is defined
+      when: usage_percent is defined and usage_percent > 80
 
     - name: Send Teams message with disk usage table
       uri:
