@@ -1,26 +1,10 @@
 - hosts: "{{ hosts }}"
 
   tasks:
-
     - name: Get disk usage
-      command: df -h
+      command: df -h /
       register: disk_usage
-
-    - name: Check disk space available
-      shell: df -h / | awk 'NR==2 {print $5}'
-      register: disk_usage
-
-    # Send Discord message when disk space is over 80%
-#    - name: Send Discord message
-#      uri:
-#       url: "{{ discord_webhook_url }}"
-#        method: POST
-#        body_format: json
-#        body: '{"content": "Disk space on {{ inventory_hostname }} is above 80%!"}'
-#        headers:
-#          Content-Type: application/json
-#        status_code: 204
-#      when: disk_usage.stdout[:-1]|int > 80
+      changed_when: false  # Prevents marking the task as changed
 
     # Teams
     - name: Send Teams message
@@ -32,9 +16,10 @@
           title: Disk Space Alert
           text: "Disk space on {{ inventory_hostname }} is above 80%!"
           sections: 
-            - fackts:
-              - names: "{{ hostvars[host].disk_usage.stdout[:-1] | int }}"
+            - facts:
+              - name: "Disk Usage"
+                value: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: disk_usage.stdout[:-1] | int > 1
+      when: disk_usage.stdout_lines[1].split()[4][:-1] | int > 80
