@@ -1,37 +1,43 @@
 - hosts: "{{ hosts }}"
-  gather_facts: no  # Skip gathering facts for efficiency
 
   tasks:
+
     - name: Get disk usage
-      command: df -h /
+      command: df -h
       register: disk_usage
-      changed_when: false  # Prevents marking the task as changed
 
-    - name: Extract disk usage percentage
-      set_fact:
-        usage_percent: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
-      when: disk_usage.stdout_lines | length > 1
+    - name: Check disk space available
+      shell: df -h / | awk 'NR==2 {print $5}'
+      register: disk_usage
 
-    - name: Add host to alert list if usage is above 80%
-      set_fact:
-        alert_hosts: "{{ alert_hosts | default([]) + [inventory_hostname] }}"
-      when: usage_percent is defined and usage_percent > 80
+    # Send Discord message when disk space is over 80%
+#    - name: Send Discord message
+#      uri:
+#       url: "{{ discord_webhook_url }}"
+#        method: POST
+#        body_format: json
+#        body: '{"content": "Disk space on {{ inventory_hostname }} is above 80%!"}'
+#        headers:
+#          Content-Type: application/json
+#        status_code: 204
+#      when: disk_usage.stdout[:-1]|int > 80
 
-    - name: Send Teams message with disk usage table
+    # Teams
+    - name: Send Teams message
       uri:
         url: "{{ teams_webhook_url }}"
         method: POST
         body_format: json
         body:
-          text: |
-            **Disk Space Alert**: The following hosts have disk usage above 80%!
+        text: |
+          **Disk Space Alert**: The following hosts have disk usage above 80%!
 
-            | Hostname        | Disk Usage (%) |
-            |------------------|-----------------|
-            {% for host in alert_hosts %}
-            | {{ host }}      | {{ hostvars[host].usage_percent }}              |
-            {% endfor %}
+          | Hostname        | Disk Usage (%) |
+          |------------------|-----------------|
+          {% for host in groups['all'] %}
+          | {{ inventory_hostname }}      | {{ hostvars[host].disk_usage.stdout[:-1] | int }}              |
+          {% endfor %}
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: alert_hosts is defined and alert_hosts | length > 0
+      when: disk_usage.stdout[:-1] | int > 1
