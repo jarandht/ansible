@@ -13,11 +13,13 @@
         method: POST
         body_format: json
         body:
-          text: |
-            **Disk Space Alert**
-            Disk space on **{{ inventory_hostname }}** is above **80%**!
-            Disk Usage: **{{ disk_usage.stdout_lines[1].split()[4][:-1] }}**
+          title: Disk Space Alert
+          text: "Disk space on {{ inventory_hostname }} is above 80%!"
+          sections: 
+            - facts:
+              - name: "Disk Usage"
+                value: "{{ disk_usage.stdout_lines[1].split()[4][:-1] | int }}"
         headers:
           Content-Type: application/json
         status_code: 200  # Teams returns 200 for a successful message
-      when: disk_usage.stdout_lines[1].split()[4][:-1] | int > 1
+      when: disk_usage.stdout_lines[1].split()[4][:-1] | int > 15
