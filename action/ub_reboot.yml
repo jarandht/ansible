@@ -3,14 +3,10 @@
   become: yes
   tasks:
 
-    - name: Reboot Ubuntu Servers
-      hosts: ubs-dks
-      become: yes
-      tasks:
-        - name: Reboot the server
-          ansible.builtin.reboot:
-            msg: "Reboot initiated by Ansible"
-            connect_timeout: 5
-            reboot_timeout: 600
-            pre_reboot_delay: 0
-            post_reboot_delay: 30
+  - name: Reboot the server
+    ansible.builtin.reboot:
+      msg: "Reboot initiated by Ansible"
+      connect_timeout: 5
+      reboot_timeout: 600
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
