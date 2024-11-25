@@ -1,0 +1,80 @@
+- hosts: "{{ hosts }}"
+
+  become: yes
+  tasks:
+
+    - name: upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+
+    - name: install core packages
+      apt:
+        name:
+          - qemu-guest-agent
+        update_cache: yes
+
+    - name: start guest qemu-guest-agent
+      service:
+        name: qemu-guest-agent
+        state: started
+        enabled: yes
+
+    - name: Set the timezone
+      ansible.builtin.command:
+        cmd: timedatectl set-timezone Europe/Oslo
+
+    - name: check if system reboot is required
+      become: true
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: install prerequisites
+      apt:
+        name:
+          - ca-certificates
+          - curl
+        update_cache: yes
+
+    - name: add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      
+    - name: get ubuntu version
+      command: "lsb_release -cs"
+      register: ubuntu_version
+
+    - name: add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ubuntu_version.stdout }} stable"
+        state: present
+
+    - name: update apt cache
+      apt:
+        update_cache: yes
+
+    - name: install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+          - docker-buildx-plugin
+        update_cache: yes
+
+    # add the current user to the docker group
+    - name: add user permissions
+      shell: "usermod -aG docker {{ ansible_user }}"
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+      when: reboot_required.stat.exists
