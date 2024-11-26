@@ -35,7 +35,6 @@
 #        headers:
 #          Content-Type: application/json
 #        status_code: 204
-#      when: reboot_required.stat.exists
 #      when: reboot_required.stat.exists and inventory_hostname in groups['reboot_excluded']
 
     #Teams message
