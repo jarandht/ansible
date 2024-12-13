@@ -52,7 +52,7 @@
         pre_reboot_delay: 0
         post_reboot_delay: 30
       when: reboot_required.stat.exists and inventory_hostname in groups['reboot_individually']
-      serial: 1
+ #     serial: 1
       
     # Send Discord message when reboot is required
 #    - name: Send Discord message
