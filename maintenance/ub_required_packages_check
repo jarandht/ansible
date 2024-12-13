@@ -1,0 +1,24 @@
+- hosts: "{{ hosts }}"
+  become: yes
+  vars:
+    required_packages:
+      - qemu-guest-agent
+  tasks:
+    - name: Gather package facts
+      package_facts:
+
+    - name: Ensure required packages are installed
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop: "{{ required_packages }}"
+      when: item not in ansible_facts.packages
+      register: apt_install_result
+      become: true
+
+    - name: Log installed packages
+      debug:
+        msg: "Installed {{ item.item }} successfully."
+      when: item.changed
+      loop: "{{ apt_install_result.results }}"
