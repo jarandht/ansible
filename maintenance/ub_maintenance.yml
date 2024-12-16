@@ -4,8 +4,8 @@
     required_packages:
       - qemu-guest-agent
   tasks:
+  
     - name: upgrade apt packages
-      become: true
       apt:
         upgrade: yes
         update_cache: yes
@@ -29,7 +29,6 @@
       loop: "{{ apt_install_result.results }}"
 
     - name: check if system reboot is required
-      become: true
       stat:
         path: /var/run/reboot-required
       register: reboot_required
@@ -42,6 +41,15 @@
         pre_reboot_delay: 0
         post_reboot_delay: 30
       when: reboot_required.stat.exists and inventory_hostname not in groups['reboot_excluded'] and inventory_hostname not in groups['reboot_individually']
+      
+    - name: Reboot HA servers
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+      when: reboot_required.stat.exists and inventory_hostname in groups['reboot_individually']
       
     # Send Discord message when reboot is required
 #    - name: Send Discord message
