@@ -48,8 +48,26 @@
         state: started
       register: service_check_after_start
       failed_when: false
+      
+#    - name: Send Discord message
+#      uri:
+#        url: "{{ discord_webhook_url }}"
+#       method: POST
+#        body_format: json
+#        body: '{"The service {{ service }} failed to start."}'
+#        headers:
+#          Content-Type: application/json
+#        status_code: 204
+#        when: service_check_after_start.status.ActiveState != 'active'
 
-    - name: Fail if the service is not running after attempt
-      ansible.builtin.fail:
-        msg: "The service {{ service }} failed to start."
+    - name: Send Teams message
+      uri:
+        url: "{{ teams_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "The service {{ service }} failed to start."
+        headers:
+          Content-Type: application/json
+        status_code: 200
       when: service_check_after_start.status.ActiveState != 'active'
