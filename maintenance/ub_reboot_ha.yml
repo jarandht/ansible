@@ -15,7 +15,8 @@
         reboot_timeout: 600
         pre_reboot_delay: 0
         post_reboot_delay: 30
-        
+      when: reboot_required.stat.exists
+
     - name: Wait for service to be running
       service_facts:
       register: result
