@@ -42,15 +42,6 @@
         post_reboot_delay: 30
       when: reboot_required.stat.exists and inventory_hostname not in groups['reboot_excluded'] and inventory_hostname not in groups['reboot_individually']
       
-    - name: Reboot HA servers
-      ansible.builtin.reboot:
-        msg: "Reboot initiated by Ansible"
-        connect_timeout: 5
-        reboot_timeout: 600
-        pre_reboot_delay: 0
-        post_reboot_delay: 30
-      when: reboot_required.stat.exists and inventory_hostname in groups['reboot_individually']
-      
     # Send Discord message when reboot is required
 #    - name: Send Discord message
 #      uri:
