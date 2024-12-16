@@ -3,11 +3,6 @@
   gather_facts: false
   serial: 1
   tasks:
-    - name: upgrade apt packages
-      apt:
-        upgrade: yes
-        update_cache: yes
-
     - name: check if system reboot is required
       stat:
         path: /var/run/reboot-required
@@ -20,3 +15,10 @@
         reboot_timeout: 600
         pre_reboot_delay: 0
         post_reboot_delay: 30
+        
+    - name: Wait for service to be running
+      service_facts:
+      register: result
+      until: result.ansible_facts.services[{{ service }}].state == 'running'
+      retries: 10
+      delay: 5
