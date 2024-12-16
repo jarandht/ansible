@@ -1,4 +1,4 @@
-- hosts: "{{ hosts }}"
+- hosts: "reboot_individually"
   become: yes
   gather_facts: false
   serial: 1
