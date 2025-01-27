@@ -16,11 +16,6 @@
       ufw:
         state: enabled
         default: deny incoming
-    - name: Allow SSH
-      community.general.ufw:
-      rule: allow
-      port: '80'
-      proto: tcp
 
     - name: Allow SSH
       community.general.ufw:
