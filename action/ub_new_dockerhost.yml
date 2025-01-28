@@ -25,11 +25,21 @@
       ansible.builtin.command:
         cmd: timedatectl set-timezone Europe/Oslo
 
-    - name: check if system reboot is required
-      become: true
-      stat:
-        path: /var/run/reboot-required
-      register: reboot_required
+    - name: Ensure ufw is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Ensure ufw is enabled
+      ansible.builtin.service:
+        name: ufw
+        state: started
+        enabled: true
+
+    - name: Deny all incoming traffic by default
+      ufw:
+        state: enabled
+        default: deny incoming
 
     - name: install prerequisites
       apt:
@@ -69,6 +79,12 @@
     # add the current user to the docker group
     - name: add user permissions
       shell: "usermod -aG docker {{ ansible_user }}"
+
+    - name: check if system reboot is required
+      become: true
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
 
     - name: Reboot
       ansible.builtin.reboot:
