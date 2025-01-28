@@ -24,7 +24,30 @@
     - name: Set the timezone
       ansible.builtin.command:
         cmd: timedatectl set-timezone Europe/Oslo
+        
+    - name: Ensure ufw is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
 
+    - name: Ensure ufw is enabled
+      ansible.builtin.service:
+        name: ufw
+        state: started
+        enabled: true
+
+    - name: Deny all incoming traffic by default
+      ufw:
+        state: enabled
+        default: deny incoming
+
+    - name: Allow SSH
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+        src: {{ ssh_src }}
+        
     - name: check if system reboot is required
       become: true
       stat:
