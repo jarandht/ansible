@@ -36,6 +36,10 @@
         state: started
         enabled: true
 
+    - name: enable UFW
+      community.general.ufw:
+        state: enabled
+
     - name: Deny all incoming traffic by default
       community.general.ufw:
         default: deny
