@@ -13,13 +13,11 @@
         enabled: true
 
     - name: Deny all incoming traffic by default
-      ufw:
-        state: enabled
-        default: deny incoming
+      community.general.ufw:
+        default: deny
+        direction: incoming
 
-    - name: Allow SSH
+    - name: Allow OpenSSH rule
       community.general.ufw:
         rule: allow
-        port: '22'
-        proto: tcp
-        src: {{ ssh_src }}
+        name: OpenSSH
