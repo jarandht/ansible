@@ -1,7 +1,10 @@
 - hosts: "{{ hosts }}"
+  collections:
+    - arubanetworks.aoscx
   tasks:
+
   - name: Upload firmware to partition through HTTP
-    arubanetworks.aoscx.aoscx_upload_firmware:
+    aoscx_upload_firmware:
       partition_name: "{{ partition }}"
       remote_firmware_file_path: "{{ remote_firmware_file_path }}"
       vrf: 'mgmt'
