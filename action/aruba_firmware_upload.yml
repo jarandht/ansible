@@ -1,11 +1,10 @@
 - hosts: "{{ hosts }}"
-#  collections:
-#    - arubanetworks.aoscx
+  collections:
+    - arubanetworks.aoscx_command
   gather_facts: False  
   tasks:
     - name: Upload firmware to partition through HTTP
-      arubanetworks.aoscx_command:
-        commands: ['show vlan']
-#        partition_name: "{{ partition }}"
-#        remote_firmware_file_path: "{{ remote_firmware_file_path }}"
-#        vrf: 'mgmt'
+      aoscx_command:
+        partition_name: "{{ partition }}"
+        remote_firmware_file_path: "{{ remote_firmware_file_path }}"
+        vrf: 'mgmt'
