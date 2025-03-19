@@ -1,5 +1,5 @@
 - name: Upload firmware to primary through HTTP
   aoscx_upload_firmware:
     partition_name: primary
-    remote_firmware_file_path: http://192.168.1.2:8000/TL_10_04_0030P.swi
+    remote_firmware_file_path: http://10.99.0.11/aruba/ArubaOS-CX_6200_10_10_1120.swi
     vrf: 'mgmt'
