@@ -36,10 +36,6 @@
         state: started
         enabled: true
 
-    - name: Allow everything and enable UFW
-      community.general.ufw:
-        state: enabled
-
     - name: Deny all incoming traffic by default
       community.general.ufw:
         default: deny
@@ -49,6 +45,10 @@
       community.general.ufw:
         rule: allow
         name: OpenSSH
+
+    - name: Allow everything and enable UFW
+      community.general.ufw:
+        state: enabled
         
     - name: check if system reboot is required
       become: true
@@ -64,3 +64,26 @@
         pre_reboot_delay: 0
         post_reboot_delay: 30
       when: reboot_required.stat.exists
+
+    - name: Ensure ansible user exists
+      user:
+        name: "{{ ansible_username }}"
+        password: "{{ ansible_password }}"
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Set authorized SSH key for ansible user
+      authorized_key:
+        user: "{{ ansible_username }}"
+        key: "{{ ansible_ssh_key }}"
+        state: present
+
+    - name: Overwrite sudoers config for ansible user
+      copy:
+        dest: "/etc/sudoers.d/{{ ansible_username }}"
+        content: |
+          {{ ansible_username }} ALL=(ALL) NOPASSWD: /usr/bin/apt-get update, /usr/bin/apt-get upgrade -y, /usr/bin/apt-get install qemu-guest-agent, /bin/systemctl reboot, /usr/bin/stat /var/run/reboot-required, /usr/bin/docker image prune -a -f, /bin/systemctl is-active docker
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
