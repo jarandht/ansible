@@ -1,0 +1,180 @@
+## Self Signed cert
+
+# sudo nano minio-san.cnf
+# [ req ]
+# default_bits       = 2048
+# prompt             = no
+# default_md         = sha256
+# distinguished_name = dn
+# x509_extensions    = v3_req
+
+# [ dn ]
+# CN = minio-cluster
+
+# [ v3_req ]
+# subjectAltName = @alt_names
+
+# [ alt_names ]
+# DNS.1 = srv-app-minio01.lan
+# DNS.2 = srv-app-minio02.lan
+# DNS.3 = srv-app-minio03.lan
+
+# sudo openssl req -x509 -nodes -days 825 -newkey rsa:2048   -keyout private.key   -out public.crt   -config minio-san.cnf
+
+
+
+## Vars:
+
+# {
+#   "install_file": "https://img.gamehub.community/minio.deb",
+#   "root_username": "serveradmin",
+#   "root_password": "serveradmin",
+#   "redirect_url": "https://10.40.0.101",
+#   "device_name": "/dev/sdb",
+#   "mount_point": "/mnt/minio1",
+#   "filesystem_type": "xfs",
+#   "minio_group": "minio-user",
+#   "minio_user": "minio-user",
+#   "minio_cert": "-----BEGIN CERTIFICATE-----\nMIIDAjCCAeqgAwIBAgIUPnOWQ50FMhBGP1n+dMrhplD6ndUwDQYJKoZIhvcNAQEL\nBQAwGDEWMBQGA1UEAwwNbWluaW8tY2x1c3RlcjAeFw0yNTA2MDcxMTAyMDZaFw0y\nNzA5MTAxMTAyMDZaMBgxFjAUBgNVBAMMDW1pbmlvLWNsdXN0ZXIwggEiMA0GCSqG\nSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCUjNBOaD4QDwjV5CduZxzusL9y82/1H3p5\nqRuzJD96j/1l2+Cr37KT20Cp1SMZfxshRf0qrGwbONm899PuRSknOga2BltbpQVG\nTKG+g7RN5ift0v52aXRFSh+jUTG+KtAzPBgmpFGQ8+UiSuFJzvACtUQDW/Ultsca\ncla4uwBoUELUJJI9SOdaMZCj7TGYxUE17XzXpqndlUpvnpw94y5WzOM4F6yUxpjH\n26BXHJFarDhpd0BUAOVVLOHw5dvLV6fIcKzwjVTE5mqlXVSM2KbkBdfk5NiZz4lg\nEHxANCEQIiY0z1BMe2FTDal7aCcp2xTU/p4VmPYhcslpGp0smtIPAgMBAAGjRDBC\nMCEGA1UdEQQaMBiHBAooAGWHBAooAGaHBAooAGeHBAooAGgwHQYDVR0OBBYEFPGF\nEVbKyb8q9MwIR7DEKafgWbOkMA0GCSqGSIb3DQEBCwUAA4IBAQBqAq00LsSxWjFC\n2fjHI98G3fUxsw+1dybNf2WzPOsM0SAcTBljpeqfXU4n/Tomr4o+fpWDxKw82fth\nS0vXSfJv5za6PDdW0U/QDMPqgeSwBj5aB67K/f8MDyy5I9bJWqBkeEgFz6g+B03O\nc34HN36fqL0Tzxo+CPRJCDECHF3BZ4K1zOQZmMG3PWuAL23Ox/cyTqaKHoOJTLvo\n1psRnusSpLt/h1/Tek8XYkd57oWkViSG4F2p8R3NPpr6B4dRC1I76nAv47RNmN9W\n6soyrGo29pvkOKWpFuCxU6zSVHV41Whfb+y66xXWqg5LHSSeubG9IF5QxSEx/0K0\n9OHW9L9f\n-----END CERTIFICATE-----\n",
+#   "minio_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCUjNBOaD4QDwjV\n5CduZxzusL9y82/1H3p5qRuzJD96j/1l2+Cr37KT20Cp1SMZfxshRf0qrGwbONm8\n99PuRSknOga2BltbpQVGTKG+g7RN5ift0v52aXRFSh+jUTG+KtAzPBgmpFGQ8+Ui\nSuFJzvACtUQDW/Ultscacla4uwBoUELUJJI9SOdaMZCj7TGYxUE17XzXpqndlUpv\nnpw94y5WzOM4F6yUxpjH26BXHJFarDhpd0BUAOVVLOHw5dvLV6fIcKzwjVTE5mql\nXVSM2KbkBdfk5NiZz4lgEHxANCEQIiY0z1BMe2FTDal7aCcp2xTU/p4VmPYhcslp\nGp0smtIPAgMBAAECggEAGFP7ZWvjBiRAMS9dWdJfRaQCpqPBqSZPm48bbzo3fy4H\ntN/OqrdG+roEnAvA5NMRMWDR9mQojEjCOBVqSvJerALvyG3AFoEvHPU95AKTy9Iu\npd9RNzlMBnD+P3Pzro46bLmhxupQRWn8E6KpxLm0Su0+x0IPIu8NKoKhOz288lg6\nySzIJLlqHMlePN2Ep5bTkl28ptctT/p2/b7E7GjHbhEHpdyRxVob5H4Gv9i/7muE\nVvggFWT2qsNXYZ60O2MmpFjTD6cwKFwvemtAAZbPGkfVRYKmGa087862MS/BIq7d\ndMhQxY2tzJPrNsMYFZGr+ROQVsqY951o0rzN0Dm/aQKBgQDEo3EjkFGpt5gPWGTI\nmSRYyoMNPm97djpxRWYln8YBPjlrbmcYms1UeeDahpjJs6A6YemMIfjn0cykXsnp\nuCfC/mdWcie04kksQ1VO7+yj0Jmpvdr9qIcZ+Sl2Va/SU33mFfaEp8AGGPl+5iLA\n+30uWthd1gI3BvQ48g6+phb2AwKBgQDBZQSXi5ubRaNhCsHtkEcH7E2G+7QEa8vu\nB7aA5LjWBGkRA3ooQ6FqT1E0la9ETB0TabEriWwwj/IQ8feNLiFeCgsRveh0mu6I\nttSchr6IwynJtHT7fgYKlHGT1gFzGanBw0MKnXJENDGzHh/ocXGKiPLRHW9NNOm+\nR9Q1zEqsBQKBgCu6ZPiRqXdiepA/CfqKA8kzD72sOsJr4kc6NaL8St4P5lj7rjWM\nh0jX6abu8583MNSK3ZLqIx36S9XptmEhMMZuKLDSpf3VrIwJVTk+pZMwWlui+sYZ\n6iFehVfpajYNlxvJmo6Zd1xjxWfw6Z2cz5O1ZBRJ+SgfhcP8IEdJTCXdAoGAMXRa\nq0I5JYi2Ud+FXfGyKFWGMcl17FeAi7sPMYDLv3bbQ02HVHqO8XedBXxtmGJ6YPd7\nJe37a6OzvB+UNVchk0GwOPY+Vms0KmPOlMRkPubhbcIm1BUTCGuTa8GjF0LtxS3g\nm/tNOCG8v9gpQrCX31xL86u6RZ0NVOpbWvKF+d0CgYBdeDSC7Z8jz9DKlNebwY3U\nUKP4mpGGKsKuTQuueFLu1uGf+RgyxoSQB7fXtybwLObz4uXrvRehI166ag3xjxBC\nwcn/RtbxvG0TQmHcVHC2vEpgzDkAB6TpVVF3KCqcShy15j14+OlDWfn/tOvzitrb\n8WXlupH3cfYF9qulEOxAow==\n-----END PRIVATE KEY-----\n",
+#   "hosts": "temp",
+#   "ip_range": "10.40.0.10{1...4}",
+#   "allowed_ips": [
+#     "10.40.0.101",
+#     "10.40.0.102",
+#     "10.40.0.103",
+#     "10.40.0.104"
+#   ]
+# }
+
+
+- name: Install minio
+  hosts: "{{ hosts }}"
+  become: yes
+  gather_facts: false
+
+  tasks:
+  
+    - name: Allow port 9000 (ui) from any IP
+      community.general.ufw:
+        rule: allow
+        port: "9000"
+        proto: tcp
+
+    - name: Allow port 9000 from each IP
+      community.general.ufw:
+        rule: allow
+        port: "9001"
+        proto: tcp
+        from_ip: "{{ item }}"
+      loop: "{{ allowed_ips }}"
+
+    - name: Create system group for minio-user
+      ansible.builtin.group:
+        name: "{{ minio_group }}"
+        system: yes
+
+    - name: Create system user for minio
+      ansible.builtin.user:
+        name: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        system: yes
+        shell: /usr/sbin/nologin
+        create_home: no
+
+    - name: Create xfs filesystem on the disk
+      community.general.filesystem:
+        fstype: "{{ filesystem_type }}"
+        dev: "{{ device_name }}"
+
+    - name: Create mount point directory
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: '0700'
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+
+    - name: Get UUID of /dev/sdb
+      command: blkid -s UUID -o value "{{ device_name }}"
+      register: blkid_output
+      changed_when: false
+
+    - name: Mount /dev/sdb and add to /etc/fstab
+      ansible.builtin.mount:
+        path: "{{ mount_point }}"
+        src: "UUID={{ blkid_output.stdout }}"
+        fstype: "{{ filesystem_type }}"
+        opts: rw,relatime,discard
+        state: mounted
+
+    - name: Set ownership on mount point
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: '0700'
+
+    - name: Create cert folder
+      file:
+        path: "/etc/minio/certs/"
+        state: directory
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: '0700'
+
+    - name: Write MinIO TLS certificate
+      copy:
+        dest: /etc/minio/certs/public.crt
+        content: "{{ minio_cert }}"
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: '0600'
+
+    - name: Write MinIO TLS private key
+      copy:
+        dest: /etc/minio/certs/private.key
+        content: "{{ minio_key }}"
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: '0600'
+
+    - name: Download file with get_url
+      ansible.builtin.get_url:
+        url: "{{ install_file }}"
+        dest: ./minio.deb
+        mode: '0644'
+
+    - name: Install minio
+      ansible.builtin.apt:
+        deb: ./minio.deb
+        state: present
+
+    - name: Cleanup
+      ansible.builtin.file:
+        path: ./minio.deb
+        state: absent
+
+    - name: Create Service Environment File
+      copy:
+        dest: "/etc/default/minio"
+        content: |
+          MINIO_API_ROOT_ACCESS=on
+          MINIO_ROOT_USER={{ root_username }}
+          MINIO_ROOT_PASSWORD={{ root_password }}
+          MINIO_OPTS="--certs-dir=/etc/minio/certs/ --console-address :9001"
+          MINIO_VOLUMES="https://{{ ip_range }}:9000/mnt/minio1"
+          MINIO_BROWSER_REDIRECT_URL="{{ redirect_url }}"
+
+          sudo systemctl enable minio.service
+          sudo systemctl start minio
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: 0600
+
+    - name: Ensure minio service is enabled and restarted
+      service:
+        name: minio
+        state: restarted
+        enabled: yes
