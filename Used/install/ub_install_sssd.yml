@@ -1,0 +1,114 @@
+# Vars
+
+# {{ hosts }}
+# {{ server_administrators_group }}
+# {{ sssd_domain }}
+# {{ ou }}
+# {{ ldap_base_dn }}
+# {{ ldap_server_url }}
+# {{ ldap_service_user_username }}
+# {{ ldap_service_user_password }}
+
+- name: Create ansible user and configure sudoers
+  hosts: "{{ hosts }}"
+  become: yes
+  gather_facts: false
+
+  vars:
+    sssd_conf_path: "/etc/sssd/sssd.conf"
+    ldap_group: "{{ server_administrators_group }}"
+
+  tasks:
+    - name: Add sudo rule for LDAP group
+      lineinfile:
+        path: /etc/sudoers.d/ldap_group
+        create: yes
+        line: '"%{{ server_administrators_group }}" ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+        
+    - name: Install LDAP and SSSD packages
+      apt:
+        name:
+          - sssd
+          - sssd-ldap
+          - ldap-utils
+          - libnss-sss
+          - libpam-sss
+          - ca-certificates
+        update_cache: yes
+
+    - name: Configure /etc/sssd/sssd.conf
+      copy:
+        dest: "{{ sssd_conf_path }}"
+        content: |
+          [nss]
+          filter_groups = root
+          filter_users = root
+          reconnection_retries = 3
+
+          [sssd]
+          config_file_version = 2
+          reconnection_retries = 3
+          domains = {{ sssd_domain }}
+          services = nss, pam, ssh
+
+          [pam]
+          reconnection_retries = 3
+
+          [domain/{{ sssd_domain }}]
+          cache_credentials = false
+          id_provider = ldap
+          chpass_provider = ldap
+          auth_provider = ldap
+          access_provider = ldap
+          ldap_uri = {{ ldap_server_url }}
+          debug_level = 9
+          ldap_schema = rfc2307bis
+          ldap_search_base = {{ ldap_base_dn }}
+          ldap_user_search_base = ou={{ ou }},{{ ldap_base_dn }}
+          ldap_group_search_base = {{ ldap_base_dn }}
+          ldap_user_object_class = {{ ou }}
+          ldap_user_name = cn
+          ldap_group_object_class = group
+          ldap_group_name = cn
+          ldap_access_order = filter
+          ldap_access_filter = (objectClass={{ ou }})
+          ldap_default_bind_dn = cn={{ ldap_service_user_username }},ou={{ ou }},{{ ldap_base_dn }}
+          ldap_default_authtok = {{ ldap_service_user_password }}
+          ldap_user_ssh_public_key = sshPublicKey
+          override_shell = /bin/bash
+          sudo_provider = ldap
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Ensure sssd service is enabled and restarted
+      service:
+        name: sssd
+        state: restarted
+        enabled: yes
+
+    - name: Configure SSH to use sss_ssh_authorizedkeys
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^{{ item.key }}"
+        line: "{{ item.key }} {{ item.value }}"
+        state: present
+      loop:
+        - { key: 'AuthorizedKeysCommand', value: '/usr/bin/sss_ssh_authorizedkeys' }
+        - { key: 'AuthorizedKeysCommandUser', value: 'nobody' }
+
+    - name: Restart SSHD
+      service:
+        name: ssh
+        state: restarted
+
+    - name: Ensure PAM configuration for su supports SSSD
+      blockinfile:
+        path: /etc/pam.d/su
+        block: |
+          auth            sufficient      pam_sss.so
+          auth            sufficient      pam_rootok.so
+          auth            required        pam_unix.so use_first_pass
+          account         required        pam_unix.so
+          session         required        pam_unix.so

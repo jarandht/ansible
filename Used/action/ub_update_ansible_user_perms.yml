@@ -1,0 +1,16 @@
+- name: Create ansible user and configure sudoers
+  hosts: "{{ hosts }}"
+  become: yes
+  gather_facts: false
+
+  tasks:
+
+    - name: Overwrite sudoers config for ansible user
+      copy:
+        dest: "/etc/sudoers.d/ansible_username"
+        content: |
+          ansible_username ALL=(ALL) NOPASSWD: /usr/bin/apt-get update, /usr/bin/apt-get upgrade -y, /usr/bin/apt-get install qemu-guest-agent, /bin/systemctl reboot, /usr/bin/stat /var/run/reboot-required, /usr/bin/docker image prune -a -f, /bin/systemctl is-active docker
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'

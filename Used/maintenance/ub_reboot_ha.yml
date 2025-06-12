@@ -1,0 +1,24 @@
+- hosts: "{{ hosts }}"
+  gather_facts: false
+  serial: 1
+    
+  tasks:
+    - name: Check if system reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot server
+      command: sudo /bin/systemctl reboot "Reboot initiated by Ansible"
+      async: 1
+      poll: 0
+      when: reboot_required.stat.exists
+
+    - name: Sleep for 120
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 10
+        timeout: 120
+        state: started
+      when: reboot_required.stat.exists

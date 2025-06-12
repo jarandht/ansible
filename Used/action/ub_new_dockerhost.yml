@@ -1,0 +1,128 @@
+- hosts: "{{ hosts }}"
+
+  become: yes
+  tasks:
+
+    - name: upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+
+    - name: install core packages
+      apt:
+        name:
+          - qemu-guest-agent
+        update_cache: yes
+
+    - name: start guest qemu-guest-agent
+      service:
+        name: qemu-guest-agent
+        state: started
+        enabled: yes
+
+    - name: Set the timezone
+      ansible.builtin.command:
+        cmd: timedatectl set-timezone Europe/Oslo
+
+    - name: Ensure ufw is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Ensure ufw is enabled
+      ansible.builtin.service:
+        name: ufw
+        state: started
+        enabled: true
+
+    - name: Deny all incoming traffic by default
+      community.general.ufw:
+        default: deny
+        direction: incoming
+
+    - name: Allow OpenSSH rule
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: enable UFW
+      community.general.ufw:
+        state: enabled
+
+    - name: install prerequisites
+      apt:
+        name:
+          - ca-certificates
+          - curl
+        update_cache: yes
+
+    - name: add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      
+    - name: get ubuntu version
+      command: "lsb_release -cs"
+      register: ubuntu_version
+
+    - name: add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ubuntu_version.stdout }} stable"
+        state: present
+
+    - name: update apt cache
+      apt:
+        update_cache: yes
+
+    - name: install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+          - docker-buildx-plugin
+        update_cache: yes
+
+    # add the current user to the docker group
+    - name: add user permissions
+      shell: "usermod -aG docker {{ ansible_user }}"
+
+    - name: check if system reboot is required
+      become: true
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+      when: reboot_required.stat.exists
+
+    - name: Ensure ansible user exists
+      user:
+        name: "{{ ansible_username }}"
+        password: "{{ ansible_password }}"
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Set authorized SSH key for ansible user
+      authorized_key:
+        user: "{{ ansible_username }}"
+        key: "{{ ansible_ssh_key }}"
+        state: present
+
+    - name: Overwrite sudoers config for ansible user
+      copy:
+        dest: "/etc/sudoers.d/{{ ansible_username }}"
+        content: |
+          {{ ansible_username }} ALL=(ALL) NOPASSWD: /usr/bin/apt-get update, /usr/bin/apt-get upgrade -y, /usr/bin/apt-get install qemu-guest-agent, /bin/systemctl reboot, /usr/bin/stat /var/run/reboot-required, /usr/bin/docker image prune -a -f, /bin/systemctl is-active docker
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'

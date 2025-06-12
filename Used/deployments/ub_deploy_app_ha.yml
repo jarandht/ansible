@@ -1,0 +1,56 @@
+---
+- name: Deploy Docker Compose services
+  hosts: "{{ hosts }}"
+  serial: 1
+  become: true
+  vars:
+    user: "serveradmin"
+    service: "keepalived"
+
+  tasks:
+    - name: Stop keepalived
+      ansible.builtin.systemd:
+        name: "{{ service }}"
+        state: stopped
+
+    - name: Ensure the Git repository directory exists (create if not present)
+      file:
+        path: "{{ dest }}"
+        state: directory
+        mode: '0700'
+
+    - name: Update git repository
+      git:
+        repo: "https://{{ gitlab_token }}:{{ gitlab_token }}@{{ gitlab_repo }}"
+        dest: "{{ dest }}"
+        version: "main"
+        bare: no
+        clone: yes
+        update: yes
+        track_submodules: yes
+
+    - name: Change ownership of the file
+      ansible.builtin.file:
+        path: "{{ dest }}"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        recurse: no
+
+    - name: Pull new docker image
+      command: docker compose pull
+      args:
+        chdir: "{{ dest }}"
+
+    - name: Start/recreate the Docker services
+      command: docker compose up -d --force-recreate
+      args:
+        chdir: "{{ dest }}"
+
+    - name: Sleep for 10
+      ansible.builtin.wait_for:
+        timeout: 10
+
+    - name: Start keepalived
+      ansible.builtin.systemd:
+        name: "{{ service }}"
+        state: started

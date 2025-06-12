@@ -1,0 +1,108 @@
+- hosts: "{{ hosts }}"
+  gather_facts: false
+  tasks:
+
+# Update
+    - name: Run apt update
+      command: sudo apt-get update
+
+    - name: Run apt upgrade
+      command: sudo apt-get upgrade -y
+
+# Check base packages
+    - name: Gather package facts
+      package_facts:
+        manager: auto
+
+    - name: Check for missing required packages
+      set_fact:
+        missing_packages: "{{ required_packages | difference(ansible_facts.packages.keys()) }}"
+
+    - name: Send Discord message for missing packages
+      uri:
+        url: "{{ discord_webhook_url }}"
+        method: POST
+        body_format: json
+        body: >
+          {{
+            {
+              "content": discord_user + " | **" + inventory_hostname + "**, the following packages are missing: " + (missing_packages | join(', '))
+            } | to_json
+          }}
+        headers:
+          Content-Type: application/json
+        status_code: 204
+      when: missing_packages | length > 0
+
+# Reboot
+    - name: check if system reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot non essential server
+      command: sudo /bin/systemctl reboot "Reboot initiated by Ansible"
+      async: 1
+      poll: 0
+      when: reboot_required.stat.exists and inventory_hostname not in groups['reboot_excluded'] and inventory_hostname not in groups['reboot_individually'] and inventory_hostname not in groups['db']
+
+    - name: Sleep for 120
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 10
+        timeout: 120
+        state: started
+      when: reboot_required.stat.exists
+
+    - name: Send Discord message
+      uri:
+        url: "{{ discord_webhook_url }}"
+        method: POST
+        body_format: json
+        body: >
+          {{
+            {
+              "content": discord_user + " | **" + inventory_hostname + "**, Reboot required"
+            } | to_json
+          }}
+        headers:
+          Content-Type: application/json
+        status_code: 204
+      when: reboot_required.stat.exists and inventory_hostname in groups['reboot_excluded']
+
+# Prune docker
+    - name: Check if docker is running
+      ansible.builtin.systemd:
+        name: "docker"
+      register: service_status
+
+    - name: Prune docker images
+      command: sudo /usr/bin/docker image prune -a -f
+      when: service_status.status['ActiveState'] == 'active'
+
+# Check storage
+    - name: Get disk usage (raw output)
+      shell: df -h /
+      register: disk_raw
+
+    - name: Extract disk usage percent
+      shell: df -h / | awk 'NR==2 {print $5}' | sed 's/%//'
+      register: disk_usage_percent
+      changed_when: false
+
+    - name: Send Discord message
+      uri:
+        url: "{{ discord_webhook_url }}"
+        method: POST
+        body_format: json
+        body: >
+          {{
+            {
+              "content": discord_user + " | **" + inventory_hostname + "**, Disk space is above 80%! Current usage: " + disk_usage_percent.stdout + "%"
+            } | to_json
+          }}
+        headers:
+          Content-Type: application/json
+        status_code: 204
+      when: disk_usage_percent.stdout | int > 80

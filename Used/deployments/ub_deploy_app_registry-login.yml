@@ -1,0 +1,45 @@
+---
+- name: Deploy Docker Compose services
+  hosts: "{{ hosts }}"
+  become: true
+
+  tasks:
+    - name: Ensure the Git repository directory exists (create if not present)
+      file:
+        path: "{{ dest }}"
+        state: directory
+        mode: '0700'
+
+    - name: Update git repository
+      git:
+        repo: "https://{{ gitlab_token }}:{{ gitlab_token }}@{{ gitlab_repo }}"
+        dest: "{{ dest }}"
+        version: "main"
+        bare: no
+        clone: yes
+        update: yes
+        track_submodules: yes
+
+    - name: Change ownership of the file
+      ansible.builtin.file:
+        path: "{{ dest }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: no
+
+    - name: Log in to Docker
+      community.docker.docker_login:
+        username: "{{ registry_username }}"
+        password: "{{ registry_password }}"
+        registry: "{{ registry }}"
+      no_log: true
+
+    - name: Pull new docker image
+      command: docker compose pull
+      args:
+        chdir: "{{ dest }}"
+
+    - name: Start/recreate the Docker services
+      command: docker compose up -d --force-recreate
+      args:
+        chdir: "{{ dest }}"

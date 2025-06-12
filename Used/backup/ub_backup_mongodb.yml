@@ -1,0 +1,58 @@
+# example rsync file
+
+# [minio-backup]
+# type = s3
+# env_auth = true
+# acl = private
+
+- name: Backup MongoDB replica and upload to S3
+  hosts: "{{ hosts }}"
+  vars:
+    backup_file: "{{ backup_dir }}/mongo_backup_"
+    compressed_file: "{{ backup_dir }}/mongo_backup_"
+
+  tasks:
+
+    - name: Get current backup time
+      command: date +%Y-%m-%d_%H-%M-%S
+      register: backup_time_cmd
+
+    - name: Run mongodump on a secondary preferred node
+      command: >
+        mongodump
+        --host "{{ mongo_hosts }}"
+        --username "{{ mong_user }}"
+        --password '{{ mongo_password }}'
+        --authenticationDatabase admin
+        --readPreference=secondaryPreferred
+        --out="{{ backup_file }}{{ backup_time_cmd.stdout }}"
+      register: mongodump_result
+      failed_when: mongodump_result.rc != 0
+
+    - name: Compress backup
+      archive:
+        path: "{{ backup_file }}{{ backup_time_cmd.stdout }}"
+        dest: "{{ compressed_file }}{{ backup_time_cmd.stdout }}.tar.gz"
+        format: gz
+
+    - name: Run rclone with env-based auth
+      command: >
+        rclone copy "{{ compressed_file }}{{ backup_time_cmd.stdout }}.tar.gz"
+        "{{ s3_rclone_name }}:/{{ s3_bucket }}/mongo_backups/"
+        --s3-no-check-bucket
+        --s3-force-path-style
+        --s3-provider Minio
+        --s3-endpoint {{ s3_endpoint_url }}
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ s3_key }}"
+        AWS_SECRET_ACCESS_KEY: "{{ s3_secret }}"
+
+    - name: Cleanup local backup directory
+      file:
+        path: "{{ backup_file }}{{ backup_time_cmd.stdout }}"
+        state: absent
+
+    - name: Remove compressed file
+      file:
+        path: "{{ compressed_file }}{{ backup_time_cmd.stdout }}.tar.gz"
+        state: absent

@@ -1,0 +1,18 @@
+- hosts: "{{ hosts }}"
+
+  become: yes
+  tasks:
+
+    - name: Download Netbird installer script
+      get_url:
+        url: https://pkgs.netbird.io/install.sh
+        dest: /tmp/netbird-install.sh
+        mode: '0755'
+
+    - name: Run Netbird installer script
+      shell: /tmp/netbird-install.sh
+      args:
+        creates: /usr/bin/netbird  # Prevents re-running if already installed
+
+    - name: Connect
+      command: netbird up --management-url {{ management_url }} --admin-url {{ admin_url }} --setup-key {{ setup_key }}

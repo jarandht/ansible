@@ -1,0 +1,28 @@
+---
+- name: Deploy data
+  hosts: "{{ hosts }}"
+  become: true
+
+  tasks:
+    - name: Ensure the Git repository directory exists (create if not present)
+      file:
+        path: "{{ dest }}"
+        state: directory
+        mode: '0700'
+
+    - name: Update git repository
+      git:
+        repo: "https://{{ gitlab_token }}:{{ gitlab_token }}@{{ gitlab_repo }}"
+        dest: "{{ dest }}"
+        version: "main"
+        bare: no
+        clone: yes
+        update: yes
+        track_submodules: yes
+
+    - name: Change ownership of the file
+      ansible.builtin.file:
+        path: "{{ dest }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes

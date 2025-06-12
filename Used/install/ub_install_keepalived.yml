@@ -1,0 +1,99 @@
+## Vars
+
+# {
+#   "hosts": "keepalived_hosts",
+#   "vip": "10.40.0.105/24",
+#   "auth_pass": "1111"
+# }
+
+# Add ips to group keepalived_hosts
+
+- name: Deploy keepalived without template
+  hosts: "{{ hosts }}"
+  become: yes
+
+  tasks:
+    - name: Install keepalived
+      ansible.builtin.package:
+        name: keepalived
+        state: present
+
+    - name: Calculate host index
+      set_fact:
+        host_index: "{{ groups['keepalived_hosts'].index(inventory_hostname) | int }}"
+
+    - name: Set state and priority based on host index
+      set_fact:
+        state: "{{ 'MASTER' if (host_index | int) == 0 else 'BACKUP' }}"
+        priority: "{{ [150 - ((host_index | int) * 10), 1] | max }}"
+
+    - name: Initialize vrrp_nodes as empty list
+      set_fact:
+        vrrp_nodes: []
+
+    - name: Build vrrp_nodes with ansible_host or inventory_hostname fallback
+      set_fact:
+        vrrp_nodes: "{{ vrrp_nodes + [ (hostvars[item].ansible_host if hostvars[item].ansible_host is defined else item) ] }}"
+      loop: "{{ groups['keepalived_hosts'] }}"s
+
+    - name: Set the IP address used to connect to this host
+      set_fact:
+        vrrp_src_ip: "{{ hostvars[inventory_hostname]['ansible_host'] | default(inventory_hostname) }}"
+
+    - name: Normalize IP strings and exclude own IP
+      set_fact:
+        unicast_peers: >-
+          {{
+            vrrp_nodes
+            | map('trim')
+            | difference([vrrp_src_ip | trim])
+            | list
+          }}
+
+    - name: Find the interface with that IP
+      set_fact:
+        vrrp_interface: >-
+          {{
+            ansible_facts | dict2items
+            | selectattr('value.ipv4.address', 'defined')
+            | selectattr('value.ipv4.address', 'equalto', vrrp_src_ip)
+            | map(attribute='key')
+            | list
+            | first
+          }}
+
+    - name: Build unicast_peer block content as a string
+      set_fact:
+        unicast_peer_block: "{{ unicast_peers | join('\n') }}"
+
+    - name: Generate keepalived config content
+      ansible.builtin.copy:
+        dest: /etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          vrrp_instance VI_1 {
+              state {{ state }}
+              interface {{ vrrp_interface }}
+              virtual_router_id 51
+              priority {{ priority }}
+              advert_int 1
+              unicast_src_ip {{ vrrp_src_ip }}
+              unicast_peer {
+                {{ unicast_peer_block | indent(12) }}
+              }
+              authentication {
+                auth_type PASS
+                auth_pass {{ auth_pass }}
+              }
+              virtual_ipaddress {
+                {{ vip }}
+              }
+          }
+
+    - name: Ensure keepalived service is enabled and restarted
+      service:
+        name: keepalived
+        state: restarted
+        enabled: yes
