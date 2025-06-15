@@ -1,0 +1,84 @@
+---
+- name: Deploy data
+  hosts: "{{ hosts }}"
+  become: true
+
+  tasks:
+    - name: Create system group for script
+      ansible.builtin.group:
+        name: "{{ script_group }}"
+        system: yes
+
+    - name: Create system user for script
+      ansible.builtin.user:
+        name: "{{ script_user }}"
+        group: "{{ script_group }}"
+        system: yes
+        shell: /usr/sbin/nologin
+        create_home: no
+
+    - name: Ensure the Git repository directory exists (create if not present)
+      file:
+        path: "{{ dest }}"
+        state: directory
+        mode: '0700'
+
+    - name: Change ownership of the file
+      ansible.builtin.file:
+        path: "{{ dest }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
+
+    - name: Update git repository
+      git:
+        repo: "https://{{ gitlab_token }}:{{ gitlab_token }}@{{ gitlab_repo }}"
+        dest: "{{ dest }}"
+        version: "main"
+        bare: no
+        clone: yes
+        update: yes
+        track_submodules: yes
+        force: yes
+
+    - name: Change ownership of the file
+      ansible.builtin.file:
+        path: "{{ dest }}"
+        owner: "{{ script_user }}"
+        group: "{{ script_group }}"
+        recurse: yes
+
+    - name: Find all files in the directory
+      find:
+        paths: "{{ dest }}"
+        patterns: "*.txt"
+        file_type: file
+        recurse: yes
+      register: found_files
+
+    - name: Set permissions to 600
+      file:
+        path: "{{ item.path }}"
+        mode: '0600'
+      loop: "{{ found_files.files }}"
+
+    - name: Find all .sh files in the directory
+      find:
+        paths: "{{ dest }}"
+        patterns: "*.sh"
+        file_type: file
+        recurse: yes
+      register: sh_files
+
+    - name: Set permissions to 700
+      file:
+        path: "{{ item.path }}"
+        mode: '0700'
+      loop: "{{ sh_files.files }}"
+
+    - name: Create cron job
+      ansible.builtin.cron:
+        name: "Run backup script"
+        user: "{{ script_user }}"
+        minute: "*/2"
+        job: "/data/runner.sh"
